@@ -24,6 +24,8 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
+本机 Docker 默认映射到 http://localhost:8010，容器内部仍使用 `8000`。
+
 ## 架构
 
 ```text

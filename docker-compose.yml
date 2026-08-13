@@ -1,0 +1,14 @@
+services:
+  cat-agent:
+    build: .
+    image: cat-agent:latest
+    container_name: cat-agent
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app.py:/app/app.py
+      - ./core:/app/core
+      - ./web:/app/web
+    restart: unless-stopped

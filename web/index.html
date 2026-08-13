@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cat Agent - 宠物体况助手</title>
+<style>
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #172033;
+  --muted: #6b7280;
+  --line: #dfe4ea;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --soft: #f8fafc;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+.app {
+  width: min(920px, 100%);
+  height: 100dvh;
+  margin: 0 auto;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.topbar {
+  height: 64px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title strong {
+  font-size: 18px;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.dot.busy {
+  background: #f59e0b;
+}
+.new-chat {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  border-radius: 6px;
+  height: 34px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+.new-chat:hover {
+  background: var(--soft);
+}
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.message {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+.message.user {
+  text-align: right;
+}
+.role {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.content {
+  line-height: 1.65;
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.message.user .content {
+  display: inline-block;
+  max-width: min(680px, 100%);
+  text-align: left;
+  color: #0f172a;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.copy {
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 8px;
+}
+.copy:hover {
+  border-color: var(--line);
+  background: var(--soft);
+  color: var(--text);
+}
+.composer {
+  border-top: 1px solid var(--line);
+  padding: 14px 18px;
+  display: flex;
+  gap: 10px;
+  background: #fff;
+}
+textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 130px;
+  resize: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font: inherit;
+  outline: none;
+}
+textarea:focus {
+  border-color: var(--primary);
+}
+.send {
+  width: 48px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--primary);
+  cursor: pointer;
+  font-size: 18px;
+}
+.send:hover {
+  background: var(--primary-dark);
+}
+.send:disabled {
+  opacity: .55;
+  cursor: default;
+}
+@media (max-width: 640px) {
+  .app { border: 0; }
+  .topbar { padding: 0 14px; }
+  .messages { padding: 14px; }
+  .message { width: 100%; }
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="title">
+      <strong>Cat Agent</strong>
+      <span class="status"><i id="dot" class="dot"></i><span id="status">在线</span></span>
+    </div>
+    <button class="new-chat" type="button" onclick="newChat()">新对话</button>
+  </header>
+
+  <section id="messages" class="messages">
+    <div class="message assistant">
+      <div class="role">Cat Agent</div>
+      <div class="content">你好，我可以帮你初步判断宠物是否有超重或肥胖风险。请告诉我宠物种类、年龄、体重、是否绝育，以及体况评分 BCS（如果知道）。</div>
+      <div class="tools">
+        <button class="copy" type="button" onclick="copyMessage(this)">复制</button>
+      </div>
+    </div>
+  </section>
+
+  <form id="composer" class="composer">
+    <textarea id="input" rows="1" placeholder="例如：我家英短，5岁，6.8kg，已绝育，BCS 7/9"></textarea>
+    <button id="send" class="send" type="submit">➤</button>
+  </form>
+</main>
+
+<script>
+const streamApi = "/api/chat/stream";
+const messages = document.getElementById("messages");
+const input = document.getElementById("input");
+const sendButton = document.getElementById("send");
+const dot = document.getElementById("dot");
+const statusText = document.getElementById("status");
+let sessionId = localStorage.getItem("cat_agent_session_id") || crypto.randomUUID();
+let loading = false;
+localStorage.setItem("cat_agent_session_id", sessionId);
+
+function setBusy(isBusy) {
+  loading = isBusy;
+  sendButton.disabled = isBusy;
+  dot.className = isBusy ? "dot busy" : "dot";
+  statusText.textContent = isBusy ? "分析中" : "在线";
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+function addMessage(role, text) {
+  const item = document.createElement("div");
+  item.className = `message ${role}`;
+  const roleName = role === "user" ? "你" : "Cat Agent";
+  const tools = role === "assistant"
+    ? '<div class="tools"><button class="copy" type="button" onclick="copyMessage(this)">复制</button></div>'
+    : "";
+  item.innerHTML = `
+    <div class="role">${roleName}</div>
+    <div class="content">${escapeHtml(text)}</div>
+    ${tools}
+  `;
+  messages.appendChild(item);
+  messages.scrollTop = messages.scrollHeight;
+  return item.querySelector(".content");
+}
+
+function setMessageText(content, text) {
+  content.textContent = text;
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function copyMessage(button) {
+  const message = button.closest(".message");
+  const content = message?.querySelector(".content");
+  const text = content?.textContent || "";
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = "已复制";
+  } catch {
+    button.textContent = "复制失败";
+  }
+  window.setTimeout(() => {
+    button.textContent = "复制";
+  }, 1200);
+}
+
+function resetIntro(text) {
+  messages.innerHTML = "";
+  addMessage("assistant", text);
+}
+
+function newChat() {
+  sessionId = crypto.randomUUID();
+  localStorage.setItem("cat_agent_session_id", sessionId);
+  resetIntro("新对话已开始。请告诉我宠物种类、年龄、体重、是否绝育和 BCS。");
+  input.focus();
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || loading) return;
+
+  input.value = "";
+  input.style.height = "auto";
+  addMessage("user", text);
+  setBusy(true);
+  const assistantContent = addMessage("assistant", "");
+
+  try {
+    const streamed = await sendStream(text, assistantContent);
+    if (!streamed.ok) {
+      setMessageText(assistantContent, streamed.message || "暂时没有收到回复，请稍后再试。");
+    }
+  } catch (error) {
+    setMessageText(assistantContent, "连接服务失败，请确认服务已经启动。");
+  } finally {
+    setBusy(false);
+    input.focus();
+  }
+}
+
+async function sendStream(text, content) {
+  const response = await fetch(streamApi, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({session_id: sessionId, message: text})
+  });
+  const contentType = response.headers.get("Content-Type") || "";
+  if (!response.ok || !contentType.includes("text/event-stream") || !response.body) {
+    let message = "服务暂不可用。";
+    try {
+      const data = await response.json();
+      message = data.error || data.message || message;
+    } catch {}
+    return {ok: false, message};
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let textSoFar = "";
+  let sawEvent = false;
+
+  while (true) {
+    const {value, done} = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, {stream: true});
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() || "";
+    for (const part of parts) {
+      const event = parseSse(part);
+      if (!event) continue;
+      sawEvent = true;
+      if (event.type === "plain") {
+        textSoFar += event.data || "";
+        setMessageText(content, textSoFar);
+      }
+    }
+  }
+
+  return {ok: sawEvent, message: sawEvent ? "" : "没有收到流式事件。"};
+}
+
+function parseSse(raw) {
+  const dataLines = raw.split(/\r?\n/)
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice(5).trimStart());
+  if (!dataLines.length) return null;
+  const data = dataLines.join("\n");
+  if (!data || data === "[DONE]") return null;
+  try {
+    return JSON.parse(data);
+  } catch {
+    return {type: "plain", data};
+  }
+}
+
+document.getElementById("composer").addEventListener("submit", (event) => {
+  event.preventDefault();
+  sendMessage();
+});
+
+input.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 130) + "px";
+});
+</script>
+</body>
+</html>

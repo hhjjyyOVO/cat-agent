@@ -1,7 +1,7 @@
 services:
   cat-agent:
     build: .
-    image: ${IMAGE_REPOSITORY:-cat-agent}:v1.0.0
+    image: ${IMAGE_REPOSITORY:-cat-agent}:v1.0.1
     container_name: cat-agent
     env_file:
       - .env

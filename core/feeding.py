@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import json
 import mimetypes
-import os
 import re
 from dataclasses import asdict, dataclass, field
 
@@ -135,7 +134,7 @@ def analyze_food_label(
 ) -> FoodLabelFacts:
     raw_text = supplement_text.strip()
     source = "manual"
-    if image_bytes and os.getenv("OPENAI_API_KEY", "").strip() and OpenAI is not None:
+    if image_bytes and get_api_key().strip() and OpenAI is not None:
         ai_result = _extract_with_openai(image_bytes, image_name, supplement_text)
         if _label_has_data(ai_result):
             return ai_result

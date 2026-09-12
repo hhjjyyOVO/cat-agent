@@ -27,6 +27,13 @@ ALIASES = {
     "ocr_model": "vision_model",
 }
 
+ENV_ALIASES = {
+    "api_base_url": ("API_BASE_URL", "BASE_URL", "OPENAI_BASE_URL", "OPENAI_API_BASE"),
+    "api_key": ("API_KEY", "OPENAI_API_KEY"),
+    "chat_model": ("CHAT_MODEL", "LLM_MODEL", "CHAT_LLM_MODEL"),
+    "vision_model": ("VISION_MODEL", "IMAGE_MODEL", "RECOGNITION_MODEL", "OCR_MODEL"),
+}
+
 
 def default_config_path() -> Path:
     env_path = os.getenv("AI_MODEL_CONFIG_PATH", "").strip()
@@ -63,15 +70,19 @@ def load_model_config(path: str | Path | None = None) -> dict[str, str]:
         if not normalized_key:
             continue
         config[normalized_key] = value.strip()
-    if not config.get("api_key"):
-        config["api_key"] = os.getenv("OPENAI_API_KEY", "").strip()
-    if not config.get("api_base_url"):
-        config["api_base_url"] = (
-            os.getenv("OPENAI_BASE_URL", "").strip()
-            or os.getenv("OPENAI_API_BASE", "").strip()
-            or DEFAULT_MODEL_CONFIG["api_base_url"]
-        )
+    for config_key, env_names in ENV_ALIASES.items():
+        env_value = _first_env_value(env_names)
+        if env_value:
+            config[config_key] = env_value
     return config
+
+
+def _first_env_value(names: tuple[str, ...]) -> str:
+    for name in names:
+        value = os.getenv(name, "").strip()
+        if value:
+            return value
+    return ""
 
 
 def get_api_base_url(path: str | Path | None = None) -> str:

@@ -112,7 +112,7 @@ async def api_ai_feeding(request: Request):
             "status": "ok",
             "session_id": session_id,
             "goal": plan.goal,
-            "feeding_ai_ready": bool(os.getenv("OPENAI_API_KEY", "").strip()),
+            "feeding_ai_ready": bool(load_model_config(MODEL_CONFIG_PATH).get("api_key", "").strip()),
             "missing_profile_fields": profile.missing_fields(),
         }
     )

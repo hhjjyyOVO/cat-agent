@@ -31,7 +31,7 @@ docker compose up -d --build
 ```
 
 本机 Docker 默认映射到 `http://localhost:8010`，容器内服务也监听 `8010`。
-Compose 默认使用固定镜像标签 `cat-agent:v1.0.0`，不会使用 `latest`。部署到阿里云 ACR 时，可在 `.env` 中将 `IMAGE_REPOSITORY` 改为 `registry.cn-beijing.aliyuncs.com/hzau-china-purffit-agent/cat-agent`，最终镜像地址为 `registry.cn-beijing.aliyuncs.com/hzau-china-purffit-agent/cat-agent:v1.0.0`。
+Compose 默认使用固定镜像标签 `cat-agent:v1.0.1`，不会使用 `latest`。部署到阿里云 ACR 时，可在 `.env` 中将 `IMAGE_REPOSITORY` 改为 `crpi-8mk2whxt6twzwk7w.cn-beijing.personal.cr.aliyuncs.com/hzau-china-purffit-agent/cat-agent`，最终镜像地址为 `crpi-8mk2whxt6twzwk7w.cn-beijing.personal.cr.aliyuncs.com/hzau-china-purffit-agent/cat-agent:v1.0.1`。
 
 ## 喂食接口示例
 
@@ -75,6 +75,10 @@ curl -X POST http://localhost:8010/api/ai/feeding `
 - `HOST_PORT`：Docker 宿主机映射端口，默认 `8010`。
 - `AI_MODEL_CONFIG_PATH`：可选，自定义模型配置文本路径。
 - `AI_SYSTEM_PROMPTS_PATH`：可选，自定义系统提示词文本路径。
+- `API_BASE_URL`：可选，SAE 或系统环境变量中的模型接口地址；会覆盖 `data/ai_models.txt`。
+- `API_KEY`：可选，SAE 或系统环境变量中的模型密钥；会覆盖 `data/ai_models.txt`。
+- `CHAT_MODEL`：可选，SAE 或系统环境变量中的聊天模型；会覆盖 `data/ai_models.txt`。
+- `VISION_MODEL`：可选，SAE 或系统环境变量中的识图模型；会覆盖 `data/ai_models.txt`。
 
 首次配置模型：
 

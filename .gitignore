@@ -4,7 +4,10 @@ venv/
 __pycache__/
 *.py[cod]
 *.log
-data/
+data/*
+!data/
+!data/system_prompts.txt
+!data/ai_models.example.txt
 dist/
 build/
 .idea/

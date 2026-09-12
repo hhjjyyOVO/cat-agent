@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+data/ai_models.txt
+data/*.key
+data/*.secret
+__pycache__
+*.pyc
+dist
+build

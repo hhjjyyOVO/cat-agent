@@ -11,8 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py /app/
 COPY core/ /app/core/
 COPY web/ /app/web/
+COPY data/ /app/data/
 COPY .env.example /app/
 
-EXPOSE 8000
+EXPOSE 8010
 
 CMD ["python", "app.py"]

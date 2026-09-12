@@ -31,6 +31,7 @@ docker compose up -d --build
 ```
 
 本机 Docker 默认映射到 `http://localhost:8010`，容器内服务也监听 `8010`。
+Compose 默认使用固定镜像标签 `cat-agent:v1.0.0`，不会使用 `latest`。部署到阿里云 ACR 时，可在 `.env` 中将 `IMAGE_REPOSITORY` 改为 `registry.cn-beijing.aliyuncs.com/hzau-china-purffit-agent/cat-agent`，最终镜像地址为 `registry.cn-beijing.aliyuncs.com/hzau-china-purffit-agent/cat-agent:v1.0.0`。
 
 ## 喂食接口示例
 
